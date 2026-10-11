@@ -1,0 +1,29 @@
+---
+- name: Сканирование сети с использованием NMAP
+  hosts: servers
+  become: yes
+  vars:
+    targets_file: "target_elements.txt"
+    tmp_directory: "/tmp/"
+
+  tasks:
+    - name: Установка через DNF
+      ansible.builtin.dnf:
+        name: nmap
+        state: present
+
+    - name: Копирование индексного файла
+      ansible.builtin.copy:
+        src: "{{ targets_file }}"
+        dest: "{{ tmp_directory }}"
+        force: true
+
+    - name: Запуск сканирования Nmap для всех портов
+      ansible.builtin.command: "nmap -p- -T4 --min-rate 1000  {{ tmp_directory }}{{ targets_file }}"
+      #сканирует только наиболее популярные 1000 портов
+      register: nmap_result
+      changed_when: true
+
+    - name: Вывод результатов сканирования в консоль Ansible
+      ansible.builtin.debug:
+        var: nmap_result.stdout_lines
